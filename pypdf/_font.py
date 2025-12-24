@@ -173,6 +173,8 @@ class FontDescriptor:
                         for idx, width in enumerate(widths_array)
                     }
                 font_descriptor_obj = pdf_font_dict.get("/FontDescriptor", DictionaryObject())
+                if "/MissingWidth" in font_descriptor_obj:
+                    font_kwargs["character_widths"]["default"] = font_descriptor_obj["/MissingWidth"].get_object()
                 # Collect font descriptor
                 font_kwargs = cls._parse_font_descriptor(
                     font_kwargs, pdf_font_dict.get("/FontDescriptor", DictionaryObject())
@@ -197,6 +199,8 @@ class FontDescriptor:
                 cls._collect_cid_character_widths(
                     d_font, char_map, font_kwargs["character_widths"]
                 )
+                if "/DW" in d_font:
+                    font_kwargs["character_widths"]["default"] = d_font["/DW"].get_object()
                 # Collect font descriptor
                 font_kwargs = cls._parse_font_descriptor(
                     font_kwargs, d_font.get("/FontDescriptor", DictionaryObject())
@@ -222,6 +226,20 @@ class Font:
     character_widths: dict[str, int] = field(default_factory=dict)
     space_width: Union[float, int] = 250
     interpretable: bool = True
+
+    @staticmethod
+    def _add_default_width(current_widths: dict[str, int]) -> None:
+        if not current_widths:
+            current_widths["default"] = 400
+        if "default" not in current_widths:
+            if " " in current_widths and current_widths[" "] != 0:
+                # Setting default to twice the space width
+                current_widths["default"] = int(2 * current_widths[" "])
+            else:
+                # Using a true average of existing glyph widths
+                # will consider width of char as avg(width)
+                valid_widths = [w for w in current_widths.values() if w > 0]
+                current_widths["default"] = sum(valid_widths) // len(valid_widths) if valid_widths else 400
 
     @classmethod
     def _from_font_resource(
@@ -250,6 +268,7 @@ class Font:
             font_descriptor = FontDescriptor.from_font_resource(pdf_font_dict, encoding, character_map)
         else:
             font_descriptor = FontDescriptor()  # Save some overhead if font is not interpretable
+        cls._add_default_width(font_descriptor.character_widths)
         character_widths = font_descriptor.character_widths
 
         return cls(
