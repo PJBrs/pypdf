@@ -271,6 +271,10 @@ class Font:
         cls._add_default_width(font_descriptor.character_widths)
         character_widths = font_descriptor.character_widths
 
+        space_width = font_descriptor.character_widths.get(" ")
+        if not space_width or space_width == 0:
+            space_width = font_descriptor.character_widths.get("default", 500) // 2
+
         return cls(
             name=name,
             sub_type=sub_type,
@@ -279,6 +283,7 @@ class Font:
             character_map=character_map,
             basefont=basefont,
             character_widths=character_widths,
+            space_width=space_width,
             interpretable=interpretable
         )
 
