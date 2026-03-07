@@ -453,7 +453,7 @@ class Font:
                 for character_code, glyph in tt_font_object.getBestCmap().items():
                     char = chr(character_code)
                     gid = tt_font_object.getGlyphID(glyph)
-                    # The following is to comply with how font_glyph_byte_map works in pypdf/generic/_appearance_stream.py
+                    # The following is to comply with how font_glyph_byte_map works in _appearance_stream.py
                     gid_bytes = gid.to_bytes(2, "big")
                     gid_key_string = gid_bytes.decode("utf-16-be", "surrogatepass")
                     character_map[gid_key_string] = char
